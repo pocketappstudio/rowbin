@@ -90,8 +90,6 @@ button.count-area{cursor:pointer}
 .ctr .cval{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;min-width:56px;text-align:center}
 .ctr .cbtn{width:52px;height:52px;border-radius:16px;border:0;background:var(--surface2);font-size:26px;font-weight:700}
 .ctr .cbtn.plus{background:var(--primary-soft)}
-.reminder-banner{position:fixed;left:12px;right:12px;bottom:calc(16px + var(--safe-b));z-index:40;background:var(--accent);color:#fff;border-radius:20px;padding:16px 18px;font-weight:700;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center}
-.reminder-banner button{background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:12px;min-height:44px;padding:0 14px;font-weight:700}
 .timer-val{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
 textarea{width:100%;min-height:140px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);padding:12px;resize:vertical}
 input[type=text],input[type=number],input[type=url],select{width:100%;min-height:50px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);padding:10px 12px}

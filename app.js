@@ -47,7 +47,7 @@
   }
   function newProject(name, craft) {
     return { id: uid(), name: name || 'My project', craft: craft || 'knit', rows: 0, target: null, notes: '',
-      hasPhoto: false, pattern: null, counters: [], reminders: [], undo: [], log: [],
+      hasPhoto: false, pattern: null, counters: [], undo: [], log: [],
       timer: { totalMs: 0, runningSince: null, sessions: [] }, createdAt: Date.now(), updatedAt: Date.now() };
   }
   function migrate(s) {
@@ -65,7 +65,7 @@
       out.counters = (Array.isArray(out.counters) ? out.counters : []).map(function (c) {
         return Object.assign({ id: uid(), name: 'Counter', value: 0, linked: true, resetAt: null, repeats: 0, repeatTarget: null }, c);
       });
-      out.reminders = Array.isArray(out.reminders) ? out.reminders : [];
+      delete out.reminders; // retired feature: drop old saved reminders
       out.undo = Array.isArray(out.undo) ? out.undo.slice(-100) : [];
       out.log = Array.isArray(out.log) ? out.log.slice(-500) : [];
       out.timer = Object.assign({ totalMs: 0, runningSince: null, sessions: [] }, out.timer || {});
@@ -331,7 +331,6 @@
     return '<ul class="small" style="padding-left:20px;margin:6px 0">' +
       '<li>Unlimited projects (free: ' + FREE_LIMIT + ')</li>' +
       '<li>Unlimited extra & repeat counters (free: ' + FREE_EXTRA_COUNTERS + ' per project)</li>' +
-      '<li>"Every N rows" reminders</li>' +
       '<li>Pattern viewer for PDFs & photos with a movable line highlighter</li>' +
       '<li>Project timer that keeps running when the app is closed (editable)</li>' +
       '<li>Themes, including a dark mode</li></ul>';
@@ -408,7 +407,6 @@
     save();
     haptic();
     updateCounterUI(p, true);
-    if (delta > 0) checkReminders(p);
     if (delta > 0 && p.target && to === p.target) { haptic('strong'); toast('🎉 You reached row ' + to + '!', 3000); }
   }
   function undo(p) {
@@ -426,31 +424,6 @@
     var from = p.rows; p.rows = to;
     logEv(p, (why || 'Set') + ': row ' + from + ' → ' + to);
     save(); updateCounterUI(p, true);
-  }
-  function checkReminders(p) {
-    if (!isPro()) return;
-    var hits = p.reminders.filter(function (r) { return r.every > 0 && p.rows >= r.start && (p.rows - r.start) % r.every === 0; });
-    if (hits.length) showReminder(p, hits.map(function (r) { return r.text; }).join(' · '));
-  }
-  function nextReminderText(p) {
-    if (!isPro() || !p.reminders.length) return '';
-    var best = null;
-    p.reminders.forEach(function (r) {
-      if (!(r.every > 0)) return;
-      var d = p.rows < r.start ? r.start - p.rows : (r.every - ((p.rows - r.start) % r.every)) % r.every;
-      if (best === null || d < best.d) best = { d: d, r: r };
-    });
-    if (!best) return '';
-    return best.d === 0 ? '🔔 This row: ' + best.r.text : '🔔 ' + best.r.text + ' in ' + plural(best.d, 'row');
-  }
-  function showReminder(p, text) {
-    haptic('strong');
-    var old = $('.reminder-banner'); if (old) old.remove();
-    var el = document.createElement('div');
-    el.className = 'reminder-banner'; el.setAttribute('role', 'alert');
-    el.innerHTML = '<span style="font-size:26px">🔔</span><div class="grow">Row ' + p.rows + ': ' + esc(text) + '</div><button type="button">Got it</button>';
-    el.querySelector('button').addEventListener('click', function () { el.remove(); });
-    document.body.appendChild(el);
   }
 
   /* ---------------- timer (timestamp based: survives closing the app) ---------------- */
@@ -642,12 +615,6 @@
       '<button class="btn small soft" data-act="add-counter">+ Add' + (!pro && p.counters.length >= FREE_EXTRA_COUNTERS ? '<span class="pro-tag">PRO</span>' : '') + '</button></div>' +
       (p.counters.length ? '' : '<p class="small muted" style="margin:4px 0 0">Use these for stitches, increases or a pattern repeat. A <b>linked</b> counter moves with every row. Set "repeat every N rows" and it starts over after N and counts the repeats you’ve finished.</p>') +
       '<div id="counter-list"></div></div>' +
-      '<div class="card" id="reminders"><div class="row"><h3 class="grow">Row reminders' + (pro ? '' : '<span class="pro-tag">PRO</span>') + '</h3>' +
-      '<button class="btn small soft" data-act="add-reminder">+ Add</button></div>' +
-      (p.reminders.length ? p.reminders.map(function (r) {
-        return '<div class="ctr"><div class="grow"><div class="cname">' + esc(r.text) + '</div><div class="small muted">Every ' + plural(r.every, 'row') + ', starting at row ' + r.start + '</div></div>' +
-          '<button class="btn small" data-act="del-reminder" data-id="' + r.id + '" aria-label="Delete reminder">✕</button></div>';
-      }).join('') : '<p class="small muted" style="margin:4px 0 0">Example: "Decrease row" every 6 rows. You get a nudge on the right row.</p>') + '</div>' +
       '<div class="card" id="timer"><h3>Project timer' + (pro ? '' : '<span class="pro-tag">PRO</span>') + '</h3>' +
       '<div class="row"><div class="grow"><div class="timer-val" id="timer-val">' + fmtDur(timerElapsed(p)) + '</div><div class="small muted">Total time. It keeps counting when the app is closed.</div></div>' +
       '<button class="btn small" data-act="timer-edit">Edit</button><button class="btn small primary" id="timer-btn" data-act="timer">' + (p.timer.runningSince ? 'Pause' : 'Start') + '</button></div></div>' +
@@ -689,7 +656,6 @@
     if (animate) { n.classList.remove('bump'); void n.offsetWidth; n.classList.add('bump'); }
     var sub = [];
     if (p.target) sub.push('of ' + p.target + ' · ' + Math.min(100, Math.round(p.rows / p.target * 100)) + '%');
-    var rem = nextReminderText(p); if (rem) sub.push(rem);
     var s = $('#count-sub'); if (s) s.innerHTML = sub.map(esc).join('<br>');
     var cl = $('#counter-list'); if (cl) cl.innerHTML = p.counters.map(counterHTML).join('');
     var hl = $('#history-list');
@@ -779,7 +745,7 @@
       (isPro() ? '<p>✓ You have Pro. Thank you!</p>' : '<button class="btn primary block" data-act="pro">Get Pro</button>') + '</div>' +
       '<div class="card"><h3>Free vs Pro</h3><table class="compare"><thead><tr><th></th><th>Free</th><th>Pro</th></tr></thead><tbody>' +
       [['Big row counter, undo, history', '✓', '✓'], ['Projects', FREE_LIMIT, '∞'], ['Extra / repeat counters per project', FREE_EXTRA_COUNTERS, '∞'], ['Notes & project photo', '✓', '✓'],
-        ['Backup export & import', '✓', '✓'], ['Keep screen on, lock, haptics', '✓', '✓'], ['Row reminders', '–', '✓'], ['Pattern viewer + highlighter', '–', '✓'],
+        ['Backup export & import', '✓', '✓'], ['Keep screen on, lock, haptics', '✓', '✓'], ['Pattern viewer + highlighter', '–', '✓'],
         ['Project timer', '–', '✓'], ['Themes & dark mode', '–', '✓'], ['Ads', 'Never', 'Never']].map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>'; }).join('') +
       '</tbody></table></div>' +
       '<div class="card"><h3>Install it like an app</h3><p class="small" style="margin-top:0"><b>iPhone (Safari):</b> tap the Share button (square with an arrow), then <b>Add to Home Screen</b>. On iPhone this also stops Safari from clearing your saved counts.</p>' +
@@ -793,7 +759,7 @@
       '<p class="small muted" style="text-align:center"><a href="privacy.html">Privacy policy page</a> · Rowbin v1.0 · PDF viewing by pdf.js (Apache-2.0)</p></main>';
   }
 
-  /* ---------------- project / counter / reminder / timer sheets ---------------- */
+  /* ---------------- project / counter / timer sheets ---------------- */
   function projectForm(p, isNew) {
     return '<h2>' + (isNew ? 'New project' : 'Edit project') + '</h2>' +
       '<label class="field"><span>Name</span><input type="text" id="pf-name" maxlength="60" value="' + esc(p ? p.name : '') + '" placeholder="e.g. Cozy cardigan"></label>' +
@@ -893,25 +859,6 @@
           if (isNew) { c.id = uid(); p.counters.push(c); logEv(p, 'Counter added: ' + c.name); }
           save(); close(); render();
           setTimeout(function () { var e2 = $('#counters'); if (e2) e2.scrollIntoView({ block: 'center' }); }, 30);
-        });
-      });
-  }
-  function reminderSheet(p) {
-    openSheet('<h2>Add a row reminder</h2>' +
-      '<label class="field"><span>Reminder</span><input type="text" id="rf-text" maxlength="60" placeholder="e.g. Decrease row"></label>' +
-      '<div class="row"><label class="field grow"><span>Every N rows</span><input type="number" inputmode="numeric" min="1" id="rf-every" value="6"></label>' +
-      '<label class="field grow"><span>First at row</span><input type="number" inputmode="numeric" min="0" id="rf-start" value="' + (p.rows + 6) + '"></label></div>' +
-      '<div class="row"><button class="btn grow" data-x="cancel">Cancel</button><button class="btn primary grow" data-x="save">Add</button></div>',
-      function (el, close) {
-        var ev = $('#rf-every', el), st = $('#rf-start', el), touched = false;
-        st.addEventListener('input', function () { touched = true; });
-        ev.addEventListener('input', function () { if (!touched) st.value = p.rows + (parseInt(ev.value, 10) || 0); });
-        el.addEventListener('click', function (e) {
-          var b = e.target.closest('[data-x]'); if (!b) return;
-          if (b.getAttribute('data-x') === 'cancel') return close();
-          var every = parseInt(ev.value, 10); if (!(every > 0)) { toast('Enter how many rows apart'); return; }
-          p.reminders.push({ id: uid(), text: $('#rf-text', el).value.trim() || 'Reminder', every: every, start: Math.max(0, parseInt(st.value, 10) || 0) });
-          save(); close(); render(); setTimeout(function () { var r = $('#reminders'); if (r) r.scrollIntoView({ block: 'center' }); }, 30);
         });
       });
   }
@@ -1144,8 +1091,6 @@
         pushUndo(p); var fv = c.value; bumpCounter(c, act === 'c-inc' ? 1 : -1);
         logEv(p, c.name + ': ' + fv + ' → ' + c.value); save(); haptic(); updateCounterUI(p, false);
         break;
-      case 'add-reminder': if (!isPro()) openPro('Row reminders'); else if (p) reminderSheet(p); break;
-      case 'del-reminder': if (p) { p.reminders = p.reminders.filter(function (r) { return r.id !== id; }); save(); render(); } break;
       case 'photo': if (p) setPhoto(p); break;
       case 'photo-del': if (p) confirmSheet('Remove photo?', 'The project photo will be deleted.', 'Remove').then(function (ok) { if (ok) { fileDel('photo:' + p.id); dropURL('photo:' + p.id); p.hasPhoto = false; save(); render(); } }); break;
       case 'edit-project': if (p) editProject(p); break;
