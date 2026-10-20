@@ -325,8 +325,8 @@
         }, { noFocus: true });
     });
   }
-  var PRICE = esc(C.PRO_PRICE || '$4.99+');
-  var PRICE_NOTE = esc(C.PRO_PRICE_NOTE || 'Pay what you want, from $4.99');
+  var PRICE = esc(C.PRO_PRICE || '$14.99');
+  var PRICE_NOTE = esc(C.PRO_PRICE_NOTE || 'One-time purchase, no subscription');
   function proFeatureList() {
     return '<ul class="small" style="padding-left:20px;margin:6px 0">' +
       '<li>Unlimited projects (free: ' + FREE_LIMIT + ')</li>' +
@@ -603,7 +603,7 @@
       '<li>Tap the big <b>+</b> at the end of each row. Every tap saves right away, so closing the app never loses your place.</li>' +
       '<li>Tapped by mistake? Hit <b>Undo</b>. Every change is also kept in the History log.</li>' +
       '<li>Add a <b>repeat counter</b> below for patterns like "8-row repeat × 39". It rolls over at 8 and counts the repeats for you.</li>' +
-      '<li>Free forever: no ads, no account. Pro is an optional <b>' + PRICE + ' one-time</b> unlock (pay what you want).</li></ol>' +
+      '<li>Free forever: no ads, no account. Pro is an optional <b>' + PRICE + ' one-time</b> unlock (one-time purchase, no subscription).</li></ol>' +
       '<button class="btn small soft" data-act="tips-ok">Got it</button></div>';
   }
 

@@ -28,7 +28,7 @@ A static, offline-first web app. No build step: every file in this folder is ser
   plus refund checks and activation limits stop casual sharing and refund abuse, which is where most leakage comes from.
 
 ### Gumroad setup (Slade)
-1. Create the product (Digital product, e.g. "Rowbin Pro"). Price: **Pay what you want**, minimum **$4.99** (suggested e.g. $6).
+1. Create the product (Digital product, e.g. "Rowbin Pro"). Price: **$14.99** fixed (one-time purchase, no subscription).
 2. Product settings: turn on **unique license keys per sale** (Gumroad's license key option). Gumroad then shows the product's **product_id**.
 3. Put the receipt text: "Open Rowbin → Settings → Enter license key, while connected to the internet."
 4. In `config.js`, set `GUMROAD_PRODUCT_ID`, `CHECKOUT_URL` (the product link) and optionally `SUPPORT_EMAIL`, then bump `VERSION` in `sw.js` and redeploy.

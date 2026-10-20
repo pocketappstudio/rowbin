@@ -4,7 +4,7 @@
  *   (Content/Settings → "License key" section shows the product_id once you tick
  *   the option that gives each sale its own license key). Required for Pro unlocks to work.
  * CHECKOUT_URL: your Gumroad product link, e.g. "https://yourname.gumroad.com/l/rowbin".
- *   Set the product to "Pay what you want" with a minimum of $4.99 on Gumroad.
+ *   Set the product to a fixed price of $14.99 on Gumroad.
  * License keys are verified ONCE online with Gumroad when a buyer enters them; after
  *   that Pro works offline. Refunded / charged-back / disabled keys are refused, and
  *   (when online) keys are quietly re-checked every RECHECK_DAYS so refunds revoke Pro.
@@ -13,8 +13,8 @@
  */
 window.ROWBIN_CONFIG = {
   APP_NAME: "Rowbin",
-  PRO_PRICE: "$4.99+",                       // shown in the app
-  PRO_PRICE_NOTE: "Pay what you want, from $4.99", // shown under the price
+  PRO_PRICE: "$14.99",                       // shown in the app
+  PRO_PRICE_NOTE: "One-time purchase, no subscription", // shown under the price
   CHECKOUT_URL: "https://pocketappstudio.gumroad.com/l/lxxun",
   GUMROAD_PRODUCT_ID: "UR9HK6ZOZUBfxT0VJK1qaA==",
   LICENSE_VERIFY_URL: "https://api.gumroad.com/v2/licenses/verify", // Gumroad allows browser (CORS) calls
